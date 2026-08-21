@@ -14,16 +14,22 @@ o = Leeway(loglevel=30)  # Level 30 minimizes console print clutter
 
 # Connect directly to the standard public HYCOM global hindcast server
 # This streams actual historical ocean current records from 2014-2015
+import os
 from opendrift.readers import reader_netCDF_CF_generic
 
-# 1. Use the verified, active 2014-2015 Global Ocean Reanalysis catalog path
-weather_url = 'http://hycom.org'
+# Explicit local path pointing directly to your iMac's storage
+local_weather_file = '/Users/charlottewaudby/Documents/7ThArc/ocean_2014.nc'
 
-print("[SYSTEM] Connecting to verified HYCOM 2014 climate repository...")
-hycom_reader = reader_netCDF_CF_generic.Reader(weather_url)
+print("[SYSTEM] Verifying local environmental file storage...")
+if not os.path.exists(local_weather_file):
+    raise FileNotFoundError(f"Missing local tracking matrix file at: {local_weather_file}")
 
-# 2. Map the active stream to OpenDrift
+print("[SYSTEM] Loading offline climate grid configuration...")
+hycom_reader = reader_netCDF_CF_generic.Reader(local_weather_file)
+
+# Ensure this matches your OpenDrift simulation object name (usually 'o')
 o.add_reader(hycom_reader)
+
 
 
 # Set horizontal atmospheric diffusivity to mimic unpredictable storms & eddies
