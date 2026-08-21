@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://google.com">
+<Document>
+  <name>MH370 Prioritized Search Corridor</name>
+  <Placemark>
+    <name>Kinetic Glide Target Path</name>
+    <LineString>
+      <tessellate>1</tessellate>
+      <coordinates>
+        92.41644295302014,-32.52348993288591,0
+        93.55671140939597,-32.52348993288591,0
+        93.55671140939597,-33.38255033557047,0
+        92.41644295302014,-33.38255033557047,0
+        92.41644295302014,-32.52348993288591,0
+      </coordinates>
+    </LineString>
+  </Placemark>
+</Document>
+</kml>
