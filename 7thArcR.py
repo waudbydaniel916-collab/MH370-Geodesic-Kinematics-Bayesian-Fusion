@@ -27,7 +27,8 @@ debris_database = [
 netcdf_path = '/Users/charlottewaudby/Documents/7ThArc/historical_hindcast.nc'
 print(f"[DATA] Loading NetCDF climate matrix into fast RAM cache...")
 
-ds = xr.open_dataset(netcdf_path)
+# Change this on or around line 30:
+ds = xr.open_dataset('historical_hindcast.nc')
 file_times = ds['time'].values
 lat_array = ds['latitude'].values
 lon_array = ds['longitude'].values
@@ -168,7 +169,7 @@ print("="*65 + "\n")
 # =========================================================================
 # 4. EXPORT MARINE FILES (HIGH-COMPATIBILITY LINESTRING TRACKING SPEC)
 # =========================================================================
-kml_path = '/Users/charlottewaudby/Documents/7ThArc/search_corridor.kml'
+kml_path = '/Users/charlottewaudby/Documents/MH370-Geodesic-Kinematics-Bayesian-Fusion/search_corridor.kml'
 print(f"[EXPORT] Writing high-compatibility marine path file to: {kml_path}")
 
 # Build a clean, flat string layout with zero nested XML attributes
@@ -246,7 +247,7 @@ ax.gridlines(draw_labels=True, dms=True, x_inline=False, y_inline=False, color='
 plt.legend(loc='lower left')
 
 # Render and save out final high-resolution graphic asset
-plt.savefig('/Users/charlottewaudby/Documents/7ThArc/native_fusion_map.png', dpi=300, bbox_inches='tight')
+plt.savefig('/Users/charlottewaudby/Documents/MH370-Geodesic-Kinematics-Bayesian-Fusion/native_fusion_map.png', dpi=300, bbox_inches='tight')
 print("[SUCCESS] Peer-ready mathematical analysis complete.")
 plt.show()
 
