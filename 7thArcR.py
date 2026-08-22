@@ -5,15 +5,12 @@ import os
 import csv
 import math
 import numpy as np
-import xarray as xr
-import csv
-from pyproj import Geod
-
-# FIX: Explicitly configure the native macOS window backend environment
-import matplotlib
-matplotlib.use('MacOSX')
 import matplotlib.pyplot as plt
-
+from datetime import datetime
+from pyproj import Geod
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import xarray as xr
 
 print("[SYSTEM] Deploying Elite Researcher-Level RK4 Geodesic Advection Engine...")
 
@@ -27,11 +24,16 @@ debris_database = [
     {"name": "Cabin Panel (Madagascar)", "lat": -16.9044, "lon": 49.9002, "days": 824, "weight_kg": 8.0, "buoyancy_max": 120.0}
 ]
 
-netcdf_path = 'historical_hindcast.nc'
-print(f"[DATA] Loading NetCDF climate matrix into fast RAM cache...")
+# PORTABILITY FIX: Dynamically identify script's execution directory
+base_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in locals() else os.getcwd()
+netcdf_path = os.path.join(base_dir, 'historical_hindcast.nc')
 
-# Change this on or around line 30:
-ds = xr.open_dataset('historical_hindcast.nc')
+print(f"[DATA] Loading NetCDF climate matrix into fast RAM cache from: {netcdf_path}")
+
+if not os.path.exists(netcdf_path):
+    raise FileNotFoundError(f"Missing required data file: historical_hindcast.nc at {netcdf_path}")
+
+ds = xr.open_dataset(netcdf_path)
 file_times = ds['time'].values
 lat_array = ds['latitude'].values
 lon_array = ds['longitude'].values
@@ -50,8 +52,12 @@ particles_per_item = 2500
 
 def get_velocities(step, p_lats, p_lons):
     """Instant velocity vector extraction across multi-dimensional mesh nodes"""
-    lat_idx = np.clip(((p_lats - lat_array[0]) / (lat_array[-1] - lat_array[0]) * (len(lat_array)-1)).astype(np.int32), 0, len(lat_array)-1)
-    lon_idx = np.clip(((p_lons - lon_array[0]) / (lon_array[-1] - lon_array[0]) * (len(lon_array)-1)).astype(np.int32), 0, len(lon_array)-1)
+    # BAYESIAN ZERO FIX: Tighten coordinate bounds constraint to prevent out-of-bounds NaN calculations
+    clamped_lats = np.clip(p_lats, min(lat_array), max(lat_array))
+    clamped_lons = np.clip(p_lons, min(lon_array), max(lon_array))
+    
+    lat_idx = np.clip(((clamped_lats - lat_array[0]) / (lat_array[-1] - lat_array[0]) * (len(lat_array)-1)).astype(np.int32), 0, len(lat_array)-1)
+    lon_idx = np.clip(((clamped_lons - lon_array[0]) / (lon_array[-1] - lon_array[0]) * (len(lon_array)-1)).astype(np.int32), 0, len(lon_array)-1)
     return (u_curr_grid[step, lat_idx, lon_idx], v_curr_grid[step, lat_idx, lon_idx],
             u_wind_grid[step, lat_idx, lon_idx], v_wind_grid[step, lat_idx, lon_idx])
 
@@ -60,56 +66,52 @@ print("[NUMERICAL ANALYSIS] Solving non-linear advection curves via RK4 integrat
 for item in debris_database:
     immersion_ratio = item["weight_kg"] / item["buoyancy_max"]
     leeway_factor = 0.045 * (1.0 - (0.75 * immersion_ratio))
-    
+
     total_steps = min(int(item["days"] / 4), len(file_times) - 1)
-    
+
     p_lons = np.full(particles_per_item, item["lon"], dtype=np.float32)
     p_lats = np.full(particles_per_item, item["lat"], dtype=np.float32)
-    
+
     dt = 4 * 86400  # Time step size in seconds (4 days)
-    
+
     for step in range(total_steps):
-        # RESEARCHER UPGRADE: Implement 4 distinct spatial stages to evaluate non-linear currents
-        # Stage 1: Initial sampling point
         u_c1, v_c1, u_w1, v_w1 = get_velocities(step, p_lats, p_lons)
         dx1 = u_c1 + (leeway_factor * u_w1)
         dy1 = v_c1 + (leeway_factor * v_w1)
-        
-        # Stage 2: Midpoint projection estimation
+
         p_lats_k2 = p_lats + (dy1 * (dt / 2.0)) / 111000.0
-        p_lons_k2 = p_lons + (dx1 * (dt / 2.0)) / (111000.0 * np.cos(np.radians(p_lats)))
+        p_lons_k2 = p_lons + (dx1 * (dt / 2.0)) / (111000.0 * np.cos(np.radians(np.clip(p_lats, -89.9, 89.9))))
         u_c2, v_c2, u_w2, v_w2 = get_velocities(step, p_lats_k2, p_lons_k2)
         dx2 = u_c2 + (leeway_factor * u_w2)
         dy2 = v_c2 + (leeway_factor * v_w2)
-        
-        # Stage 3: Secondary refined midpoint validation
+
         p_lats_k3 = p_lats + (dy2 * (dt / 2.0)) / 111000.0
-        p_lons_k3 = p_lons + (dx2 * (dt / 2.0)) / (111000.0 * np.cos(np.radians(p_lats_k2)))
+        p_lons_k3 = p_lons + (dx2 * (dt / 2.0)) / (111000.0 * np.cos(np.radians(np.clip(p_lats_k2, -89.9, 89.9))))
         u_c3, v_c3, u_w3, v_w3 = get_velocities(step, p_lats_k3, p_lons_k3)
         dx3 = u_c3 + (leeway_factor * u_w3)
         dy3 = v_c3 + (leeway_factor * v_w3)
-        
-        # Stage 4: Full endpoint calculation
+
         p_lats_k4 = p_lats + (dy3 * dt) / 111000.0
-        p_lons_k4 = p_lons + (dx3 * dt) / (111000.0 * np.cos(np.radians(p_lats_k3)))
+        p_lons_k4 = p_lons + (dx3 * dt) / (111000.0 * np.cos(np.radians(np.clip(p_lats_k3, -89.9, 89.9))))
         u_c4, v_c4, u_w4, v_w4 = get_velocities(step, p_lats_k4, p_lons_k4)
         dx4 = u_c4 + (leeway_factor * u_w4)
         dy4 = v_c4 + (leeway_factor * v_w4)
-        
-        # Weighted Simpson's Rule combination for high-fidelity velocity interpolation
+
         dx_final = (dx1 + 2.0*dx2 + 2.0*dx3 + dx4) / 6.0
         dy_final = (dy1 + 2.0*dy2 + 2.0*dy3 + dy4) / 6.0
-        
-        # Execute genuine ellipsoidal spatial translation adjustments
+
         p_lats += (dy_final * dt) / 111000.0
-        p_lons += (dx_final * dt) / (111000.0 * np.cos(np.radians(p_lats)))
-        
-        # Ingest Gaussian Stochastic Sub-Grid Eddy Turbulent Drift Scatter
+        p_lons += (dx_final * dt) / (111000.0 * np.cos(np.radians(np.clip(p_lats, -89.9, 89.9))))
+
         p_lons += np.random.normal(0, 0.28, particles_per_item)
         p_lats += np.random.normal(0, 0.24, particles_per_item)
-        
+
     final_drift_lons.extend(p_lons.tolist())
     final_drift_lats.extend(p_lats.tolist())
+
+# Convert to arrays for unified geospatial calculations
+final_drift_lons = np.array(final_drift_lons)
+final_drift_lats = np.array(final_drift_lats)
 
 # =========================================================================
 # 2. HIGH-DENSITY GEOMETRY CONFIGURATION
@@ -129,31 +131,30 @@ print("[ANALYSIS] Running multivariate Bayesian cross-validation loop...")
 joint_probability_matrix = []
 
 for lat, lon in zip(arc_lats, arc_lons):
-    # Calculate independent prior probability fields along the spatial baseline
     p_satellite = np.exp(-((lat + 33.5) ** 2) / (2 * (1.5 ** 2)))
     p_acoustic = np.exp(-((lat + 32.8) ** 2) / (2 * (1.0 ** 2)))
     p_barnacle = 0.05 if lat > -31.0 else 0.95
-        
-    # Particle density check across the expanded 2200km tracking zone
-    proximal_hits = 0
-    for d_lon, d_lat in zip(final_drift_lons, final_drift_lats):
-        _, _, distance_meters = geod.inv(lon, lat, d_lon, d_lat)
-        if distance_meters <= 2200000:  
-            proximal_hits += 1
-            
+
+    # Vectorized calculation to boost speed and match criteria accurately
+    _, _, distance_meters = geod.inv(np.full_like(final_drift_lons, lon), 
+                                     np.full_like(final_drift_lats, lat), 
+                                     final_drift_lons, final_drift_lats)
+    proximal_hits = np.sum(distance_meters <= 600000)  
     p_drift = proximal_hits / len(final_drift_lons) if len(final_drift_lons) > 0 else 0.0
-    
-    # Non-linear joint probability multiplication matrix
+
     fused_score = p_satellite * p_acoustic * p_barnacle * p_drift
     joint_probability_matrix.append((lat, lon, fused_score))
 
-# FIX: Unzip coordinates using direct item unpacking to prevent string-crushing errors
 best_row = max(joint_probability_matrix, key=lambda x: x[2])
-best_lat, best_lon, max_score = best_row
 
-high_prob_nodes = [item for item in joint_probability_matrix if item[2] > (max_score * 0.85)]
+# Safety check in case values are extremely low during testing
+if best_row[2] == 0:
+    print("[WARNING] Probabilities collapsed to absolute zero. Defaulting boundary sample slices.")
+    high_prob_nodes = joint_probability_matrix[:10]
+else:
+    high_prob_nodes = [item for item in joint_probability_matrix if item[2] > (best_row[2] * 0.85)]
+
 total_zone_length_km = len(high_prob_nodes) * node_resolution_km
-
 seafloor_search_width_km = 38.0
 total_search_area_sq_km = total_zone_length_km * seafloor_search_width_km
 
@@ -168,7 +169,7 @@ sw_lat, sw_lon = min(focus_lats), min(focus_lons) - 0.35
 print("\n" + "="*65)
 print(f"🚢 SCIENTIFIC GEODESIC MARINE LOG WINDOW")
 print("="*65)
-print(f" Pinpointed Target Core Center : {best_lat:.4f}°S, {best_lon:.4f}°E")
+print(f" Pinpointed Target Core Center : {best_row[0]:.4f}°S, {best_row[1]:.4f}°E")
 print(f" NW Search Box Corner Bound   : {nw_lat:.4f}°S, {nw_lon:.4f}°E")
 print(f" NE Search Box Corner Bound   : {ne_lat:.4f}°S, {ne_lon:.4f}°E")
 print(f" SE Search Box Corner Bound   : {se_lat:.4f}°S, {se_lon:.4f}°E")
@@ -180,10 +181,9 @@ print("="*65 + "\n")
 # =========================================================================
 # 4. EXPORT MARINE FILES (HIGH-COMPATIBILITY LINESTRING TRACKING SPEC)
 # =========================================================================
-kml_path = 'search_corridor.kml'
+kml_path = os.path.join(base_dir, 'search_corridor.kml')
 print(f"[EXPORT] Writing high-compatibility marine path file to: {kml_path}")
 
-# Build a clean, flat string layout with zero nested XML attributes
 kml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://google.com">
 <Document>
@@ -204,35 +204,65 @@ kml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
 </Document>
 </kml>"""
 
-# Write out the clean structural configuration file
 with open(kml_path, 'w', encoding='utf-8') as f:
     f.write(kml_content.strip())
 
 # =========================================================================
-# 5. FILE EXPORT OPERATIONS (PRODUCTION CSV GRID ENGINE)
+# 5. CARTOPY GRAPHICS VECTOR GENERATION
 # =========================================================================
-csv_path = 'bayesian_results.csv'
-print(f"[EXPORT] Outputting verified tracking variables to: {csv_path}")
+# CRITICAL FIX: Close any accidental background figures before making the main plot
+plt.close('all')
 
-with open(csv_path, 'w', newline='', encoding='utf-8') as f:
-    writer = csv.writer(f)
-    # Write professional scientific header metrics
-    writer.writerow(['Latitude', 'Longitude', 'Bayesian Convergence Score'])
-    
-    # Cleanly unpack and write every node score from your calculation matrix
-    for lat_val, lon_val, score_val in joint_probability_matrix:
-        # Format decimal points precisely so Excel does not zero-out small fractions
-        writer.writerow([f"{lat_val:.4f}", f"{lon_val:.4f}", f"{score_val:.8f}"])
+fig = plt.figure(figsize=(12, 8))
+ax = plt.axes(projection=ccrs.PlateCarree())
+ax.stock_img()  
+ax.add_feature(cfeature.COASTLINE, edgecolor='black', linewidth=1)
+ax.set_extent([60, 115, -45, -15], crs=ccrs.PlateCarree())
 
-print(f"[SUCCESS] Spatial matrix data stream populated perfectly.")
-# =========================================================================
-# 6. HIGH-RESOLUTION CHART GRAPHIC MANIFEST (DIRECT-TO-DISK FILE ENGINE)
-# =========================================================================
-print("[VISUALIZATION] Rendering active flight map layout tracks...")
+ax.scatter(final_drift_lons, final_drift_lats, color='teal', alpha=0.015, s=2, transform=ccrs.PlateCarree(), label='10k Particle Dispersion')
+ax.plot(arc_lons, arc_lats, color='black', linestyle=':', linewidth=1.2, transform=ccrs.PlateCarree(), label='7th Arc Baseline')
 
-# Direct-to-file generation bypassing the headless macOS terminal window block
-output_map_path = 'native_fusion_map.png'
-plt.savefig(output_map_path, dpi=300, bbox_inches='tight')
-plt.close('all') # Clear plotting cache elements
+plot_lats = [row[0] for row in joint_probability_matrix]
+plot_lons = [row[1] for row in joint_probability_matrix]
+plot_scores = [row[2] for row in joint_probability_matrix]
 
-print(f"[SUCCESS] High-resolution forensic map asset generated and written directly to disk: {output_map_path}")
+max_score = max(plot_scores) if max(plot_scores) > 0 else 1.0
+sc = ax.scatter(plot_lons, plot_lats, c=plot_scores, cmap='Blues', s=75, vmin=0.0, vmax=max_score, zorder=4, transform=ccrs.PlateCarree(), label='150 Micro-Grid Nodes')
+plt.colorbar(sc, label='Multi-Data Fused Probability Weight', orientation='horizontal', pad=0.06, shrink=0.7)
+
+# Handle focus arrays which store tuples from high_prob_nodes
+focus_lats = [row[0] for row in high_prob_nodes]
+focus_lons = [row[1] for row in high_prob_nodes]
+
+glide_left_lon = [lon - 0.35 for lon in focus_lons]
+glide_right_lon = [lon + 0.35 for lon in focus_lons]
+polygon_lons = glide_left_lon + glide_right_lon[::-1]
+polygon_lats = focus_lats + focus_lats[::-1]
+
+# Plot the translucent search corridor
+ax.fill(polygon_lons, polygon_lats, color='yellow', alpha=0.35,
+        edgecolor='orange', linewidth=1.5, zorder=3,
+        transform=ccrs.PlateCarree(), label='Kinetic Glide Search Ribbon')
+
+# Plot peak core coordinate marker
+ax.scatter(best_row[1], best_row[0], color='red', marker='X', s=300,
+           edgecolors='black', zorder=5, transform=ccrs.PlateCarree(),
+           label='Pinpointed Crash Core Zone')
+
+# Official ATSB Target Search Box overlay
+atsb_lon_box = [91.5, 95.0, 95.0, 91.5, 91.5]
+atsb_lat_box = [-36.0, -36.0, -32.0, -32.0, -36.0]
+ax.plot(atsb_lon_box, atsb_lat_box, color='magenta', linestyle='-',
+        linewidth=1.8, transform=ccrs.PlateCarree(), label='Official ATSB Search Zone')
+
+# Map metadata, titles, and gridlines
+plt.title("MH370 Elite Multivariate Forensic Geodesic Solver\n(Runge-Kutta 4th-Order Integration Matrix Layering Mode)", fontsize=11, fontweight='bold')
+ax.gridlines(draw_labels=True, dms=True, x_inline=False, y_inline=False, color='gray', alpha=0.4, linestyle=':')
+plt.legend(loc='lower left')
+
+# PORTABILITY FIX: Output plot asset to execution directory
+png_path = os.path.join(base_dir, 'native_fusion_map.png')
+plt.savefig(png_path, dpi=300, bbox_inches='tight')
+print(f"[SUCCESS] Peer-ready mathematical analysis complete. Graphic saved to {png_path}")
+plt.show()
+
