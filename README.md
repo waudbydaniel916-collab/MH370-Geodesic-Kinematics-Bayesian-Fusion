@@ -99,10 +99,15 @@ $$A_{\text{net}} = (|\mathbf{K}_{\text{focus}}| \times \Delta_{\text{resolution}
 =======================================================================================================================================
 
 Pinpointed Target Core Center : -32.9530°S, 92.9866°E
+
  NW Search Box Corner Bound   : -32.5235°S, 92.4164°E
+ 
  NE Search Box Corner Bound   : -32.5235°S, 93.5567°E
+ 
  SE Search Box Corner Bound   : -33.3826°S, 93.5567°E
+ 
  SW Search Box Corner Bound   : -33.3826°S, 92.4164°E
+ 
  VERIFIED NET SEAFLOOR AREA   : 4182.8 Square Kilometers
 
  ======================================================================================================================================
