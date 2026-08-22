@@ -102,7 +102,7 @@ $$A_{\text{net}} = (|\mathbf{K}_{\text{focus}}| \times \Delta_{\text{resolution}
 
 ---
 
-## 🔊 Hydroacoustic Arrival Time Verification Engine
+## Hydroacoustic Arrival Time Verification Engine
 The framework integrates deep-sea sound propagation dynamics over the SOFAR channel ({\text{sound}} = 1482.0\text{ m/s}$) to calculate precise travel-time vectors from the pinpointed Bayesian crash center. This module actively filters out macro-seismic geological events to enable micro-signal background auditing:
 
 * **Station HA01 (Cape Leeuwin, Australia)**: Geodesic Distance: **2054.22 km** | Expected Travel Window: **23 mins, 6.113 secs**
