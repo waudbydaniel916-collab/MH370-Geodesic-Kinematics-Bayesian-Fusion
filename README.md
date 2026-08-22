@@ -20,9 +20,6 @@ Pinpointed Target Core Center : -32.9530°S, 92.9866°E
  SW Search Box Corner Bound   : -33.3826°S, 92.4164°E
  VERIFIED NET SEAFLOOR AREA   : 4182.8 Square Kilometers
 
- It is currently unknown as why Bayesian_Results.csv states all convergence scores as 0.0, these results had shown positive in testing.
- This is currently into investigation.
-
  ======================================================================================================================================
 
  
