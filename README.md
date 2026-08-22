@@ -98,3 +98,13 @@ $$A_{\text{net}} = (|\mathbf{K}_{\text{focus}}| \times \Delta_{\text{resolution}
 *Where:*
 * $\Delta_{\text{resolution}} = 18.5\text{ km}$ (the physical spacing separating grid nodes).
 * $W_{\text{seafloor}} = 38.0\text{ km}$ (the standard operational width of active side-scan multibeam sonar arrays).
+
+
+---
+
+## 🔊 Hydroacoustic Arrival Time Verification Engine
+The framework integrates deep-sea sound propagation dynamics over the SOFAR channel ({\text{sound}} = 1482.0\text{ m/s}$) to calculate precise travel-time vectors from the pinpointed Bayesian crash center. This module actively filters out macro-seismic geological events to enable micro-signal background auditing:
+
+* **Station HA01 (Cape Leeuwin, Australia)**: Geodesic Distance: **2054.22 km** | Expected Travel Window: **23 mins, 6.113 secs**
+* **Station H08 (Diego Garcia, Indian Ocean)**: Geodesic Distance: **3544.95 km** | Expected Travel Window: **39 mins, 52.001 secs**
+* **Inter-Station Delta Constraint**: $\Delta t = 16\text{ mins, } 46\text{ secs}$ (The mandatory sensor arrival delay required to validate a localized wave origin)
