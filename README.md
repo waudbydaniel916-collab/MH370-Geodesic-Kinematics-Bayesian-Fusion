@@ -108,3 +108,15 @@ The framework integrates deep-sea sound propagation dynamics over the SOFAR chan
 * **Station HA01 (Cape Leeuwin, Australia)**: Geodesic Distance: **2054.22 km** | Expected Travel Window: **23 mins, 6.113 secs**
 * **Station H08 (Diego Garcia, Indian Ocean)**: Geodesic Distance: **3544.95 km** | Expected Travel Window: **39 mins, 52.001 secs**
 * **Inter-Station Delta Constraint**: $\Delta t = 16\text{ mins, } 46\text{ secs}$ (The mandatory sensor arrival delay required to validate a localized wave origin)
+
+
+---
+
+## ✈️ Kinematic Glide Extension Trajectory Engine
+The framework incorporates an aerodynamic descent simulation module to map potential aircraft trajectories following fuel exhaustion. By modeling a Boeing 777 airframe's unpowered glide profile (.0:1\text{ Lift-to-Drag ratio}$) starting from a flameout cruise altitude of ,000\text{ feet}$, the solver projects a maximum sliding range footprint of **185.32 km** centered on the recovered flight simulator coordinates:
+
+* **North Boundary Limit**: 569XZilms43.3322^\circ\text{S}, 104.0000^\circ\text{E}$
+* **East Boundary Limit**: 569XZilms44.9758^\circ\text{S}, 106.3497^\circ\text{E}$
+* **South Boundary Limit**: 569XZilms46.6673^\circ\text{S}, 104.0000^\circ\text{E}$
+* **West Boundary Limit**: 569XZilms44.9758^\circ\text{S}, 101.6503^\circ\text{E}$
+* **Strategic Core Value**: Establishes a concrete bounding envelope located significantly beyond the un-piloted high-speed dive zones historically scanned by the ATSB.
