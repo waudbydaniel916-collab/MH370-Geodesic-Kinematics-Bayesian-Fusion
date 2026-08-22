@@ -54,7 +54,7 @@ $$\Delta \lambda = \frac{u_{\text{final}} \cdot \Delta t}{R_E \cdot \cos(\phi)}$
 ### 2. Geodesic Proximity Density Metric
 The spatial distance between fixed search array grid nodes $\mathbf{X}_{\text{node}} = (\lambda_n, \phi_n)$ and the advected terminal coordinates of the particle ensemble $\mathbf{X}_{\text{drift}} = (\lambda_d, \phi_d)$ is solved geodesically. The model utilizes inverse geodesic calculations mapped over the **WGS84 ellipsoidal reference frame** via the Karney algorithm to maintain absolute precision over cross-basin scales:
 
-$$s_{\text{distance}} = \text{Geodesic\_Inverse}(\mathbf{X}_{\text{node}}, \mathbf{X}_{\text{drift}})$$
+$$s_{\text{distance}} = \text{Geodesic-Inverse}(\mathbf{X}_{\text{node}}, \mathbf{X}_{\text{drift}})$$
 
 The local empirical drift likelihood ($P_{\text{drift}}$) at any given node represents the density of passing particles that intercept the defined proximity radius threshold ($r \le 1,400\text{ km}$):
 
