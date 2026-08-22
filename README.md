@@ -17,7 +17,7 @@ The analytical framework processes independent environmental and hydroacoustic d
 ### Optimized Search Corridor View
 The finalized output isolates the highest probability density region, cutting down the unconstrained search field by an estimated **72.1%** compared to the original, legacy search zones.
 
-<img src="https://githubusercontent.com" width="800" alt="MH370 Bayesian Data Fusion Search Area Optimization">
+![MH370 Bayesian Data Fusion Search Area Optimization](./native_fusion_map.png)
 
 ---
 
