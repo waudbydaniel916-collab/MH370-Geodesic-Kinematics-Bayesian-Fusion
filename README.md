@@ -2,7 +2,7 @@
 
 This repository houses a high-fidelity marine drift simulation and multi-sensor data fusion engine engineered to optimize deep-sea search corridor parameters along the historical 7th Arc baseline. By coupling a vectorized **4th-Order Runge-Kutta (RK4) Lagrangian advection solver** with a multivariate **Bayesian tracking matrix**, this architecture reduces unconstrained search distributions down to a highly prioritized tactical corridor.
 
-## 🚢 SCIENTIFIC GEODESIC MARINE LOG WINDOW
+## SCIENTIFIC GEODESIC MARINE LOG WINDOW
 The analytical framework processes independent environmental and hydroacoustic data streams to isolate the absolute mathematical peak convergence zone:
 
 ======================================================================================================================================
