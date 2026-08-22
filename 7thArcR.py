@@ -24,7 +24,7 @@ debris_database = [
     {"name": "Cabin Panel (Madagascar)", "lat": -16.9044, "lon": 49.9002, "days": 824, "weight_kg": 8.0, "buoyancy_max": 120.0}
 ]
 
-netcdf_path = '/Users/charlottewaudby/Documents/7ThArc/historical_hindcast.nc'
+netcdf_path = 'historical_hindcast.nc'
 print(f"[DATA] Loading NetCDF climate matrix into fast RAM cache...")
 
 # Change this on or around line 30:
@@ -169,7 +169,7 @@ print("="*65 + "\n")
 # =========================================================================
 # 4. EXPORT MARINE FILES (HIGH-COMPATIBILITY LINESTRING TRACKING SPEC)
 # =========================================================================
-kml_path = '/Users/charlottewaudby/Documents/MH370-Geodesic-Kinematics-Bayesian-Fusion/search_corridor.kml'
+kml_path = 'search_corridor.kml'
 print(f"[EXPORT] Writing high-compatibility marine path file to: {kml_path}")
 
 # Build a clean, flat string layout with zero nested XML attributes
@@ -247,7 +247,7 @@ ax.gridlines(draw_labels=True, dms=True, x_inline=False, y_inline=False, color='
 plt.legend(loc='lower left')
 
 # Render and save out final high-resolution graphic asset
-plt.savefig('/Users/charlottewaudby/Documents/MH370-Geodesic-Kinematics-Bayesian-Fusion/native_fusion_map.png', dpi=300, bbox_inches='tight')
+plt.savefig('native_fusion_map.png', dpi=300, bbox_inches='tight')
 print("[SUCCESS] Peer-ready mathematical analysis complete.")
 plt.show()
 
