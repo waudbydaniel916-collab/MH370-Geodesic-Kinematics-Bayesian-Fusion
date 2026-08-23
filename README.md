@@ -84,6 +84,9 @@ $$P_{\text{fused}} = P_{\text{satellite}} \times P_{\text{acoustic}} \times P_{\
 ### 🦪 Barnacle Ecological Threshold ({\text{barnacle}}$)
 Models historical sea-surface temperature limitations derived from stable oxygen isotope ratios ($\delta^{18}\text{O} / \delta^{16}\text{O}$) in recovered marine shell structures:
 
+2192P_{\text{barnacle}} = \begin{cases} 0.05, & \text{if } \phi > -31.0^\circ \text{ (Warm Waters)} \\ 0.95, & \text{if } \phi \le -31.0^\circ \text{ (Temperate Sub-Antarctic)} \end{cases}2192
+Models historical sea-surface temperature limitations derived from stable oxygen isotope ratios ($\delta^{18}\text{O} / \delta^{16}\text{O}$) in recovered marine shell structures:
+
 610P_{\text{barnacle}} = \begin{cases} 0.05, & \text{if } \phi > -31.0^\circ \text{ (Warm Waters)} \\ 0.95, & \text{if } \phi \le -31.0^\circ \text{ (Temperate Sub-Antarctic)} \end{cases}610
    $$P_{\text{barnacle}} = \begin{cases} 0.05, & \text{if } \phi > -31.0^\circ \text{ (Warm Waters)} \\ 0.95, & \text{if } \phi \le -31.0^\circ \text{ (Temperate Sub-Antarctic)} \end{cases}$$
 
