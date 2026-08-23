@@ -81,14 +81,15 @@ $$P_{\text{fused}} = P_{\text{satellite}} \times P_{\text{acoustic}} \times P_{\
 2. **Acoustic Waveform Likelihood ($P_{\text{acoustic}}$)**: Models arrival time window matching from low-frequency hydrophone data recorders (Stations HA01 and H08) as a focused Gaussian constraint centered at $-32.8^\circ\text{S}$:
    $$P_{\text{acoustic}} = \exp\left(-\frac{(\phi - (-32.8))^2}{2\sigma_{\text{ac}}^2}\right), \quad \sigma_{\text{ac}} = 1.0^\circ$$
 
-### 🦪 Barnacle Ecological Threshold ({\text{barnacle}}$)
+### 🦪 Barnacle Ecological Threshold ($P_{\text{barnacle}}$)
 Models historical sea-surface temperature limitations derived from stable oxygen isotope ratios ($\delta^{18}\text{O} / \delta^{16}\text{O}$) in recovered marine shell structures:
 
-2192P_{\text{barnacle}} = \begin{cases} 0.05, & \text{if } \phi > -31.0^\circ \text{ (Warm Waters)} \\ 0.95, & \text{if } \phi \le -31.0^\circ \text{ (Temperate Sub-Antarctic)} \end{cases}2192
-Models historical sea-surface temperature limitations derived from stable oxygen isotope ratios ($\delta^{18}\text{O} / \delta^{16}\text{O}$) in recovered marine shell structures:
-
-610P_{\text{barnacle}} = \begin{cases} 0.05, & \text{if } \phi > -31.0^\circ \text{ (Warm Waters)} \\ 0.95, & \text{if } \phi \le -31.0^\circ \text{ (Temperate Sub-Antarctic)} \end{cases}610
-   $$P_{\text{barnacle}} = \begin{cases} 0.05, & \text{if } \phi > -31.0^\circ \text{ (Warm Waters)} \\ 0.95, & \text{if } \phi \le -31.0^\circ \text{ (Temperate Sub-Antarctic)} \end{cases}$$
+$$
+P_{\text{barnacle}} = \begin{cases} 
+0.05, & \text{if } \phi > -31.0^\circ \text{ (Warm Waters)} \\ 
+0.95, & \text{if } \phi \le -31.0^\circ \text{ (Temperate Sub-Antarctic)} 
+\end{cases}
+$$
 
 ---
 
