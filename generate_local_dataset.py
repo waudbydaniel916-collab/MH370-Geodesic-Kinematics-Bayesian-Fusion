@@ -63,7 +63,7 @@ dataset = xr.Dataset(
 )
 
 # 4. Compile and write the final file directly to your Documents directory
-output_path = '/Users/charlottewaudby/Documents/7ThArc/historical_hindcast.nc'
+output_path = 'historical_hindcast.nc'
 dataset.to_netcdf(output_path)
 
 print(f"[SUCCESS] High-fidelity NetCDF weather cube compiled and written to: {output_path}")
