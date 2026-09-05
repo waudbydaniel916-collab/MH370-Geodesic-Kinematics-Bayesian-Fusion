@@ -8,8 +8,8 @@ delta18O_seawater = 0.22 # Estimated local sub-Antarctic surface water salinity 
 # Calculated temperature values decrease by 1°C for every 0.22 per mil increase in calcite
 computed_temperature_c = 21.9 - 4.34 * (delta18O_calcite - delta18O_seawater)
 
-print(f"🦪 Shell Chemistry Profiler:")
+print(f" Shell Chemistry Profiler:")
 print(f"  ├── Sampled Layer Calcite Ratio : {delta18O_calcite} ‰")
 print(f"  └── Reconstructed Water Temperature: {computed_temperature_c:.2f}°C")
-print("🚨 WATER BODY CLASSIFICATION: TEMPERATE SUB-ANTARCTIC CURRENTS")
+print("  WATER BODY CLASSIFICATION: TEMPERATE SUB-ANTARCTIC CURRENTS")
 print("   This chemical threshold locks the initial drift sequence to latitudes below -31°S.")

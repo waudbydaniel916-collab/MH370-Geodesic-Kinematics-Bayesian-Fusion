@@ -10,7 +10,7 @@ GES_HANDSHAKE_DELAY_SEC = 4.3
 
 total_warmup_latency = POWER_ON_SELF_TEST_SEC + SATELLITE_ACQUISITION_SEC + GES_HANDSHAKE_DELAY_SEC
 
-print(f"🛰️ Logged Inmarsat Blink : {logon_request_utc} UTC")
+print(f"  Logged Inmarsat Blink : {logon_request_utc} UTC")
 print(f"  ├── SDU Internal Self-Test Duration : {POWER_ON_SELF_TEST_SEC} sec")
 print(f"  ├── Satellite Lock Acquisition      : {SATELLITE_ACQUISITION_SEC} sec")
 print(f"  └── GES Protocol Transmission Delay : {GES_HANDSHAKE_DELAY_SEC} sec")

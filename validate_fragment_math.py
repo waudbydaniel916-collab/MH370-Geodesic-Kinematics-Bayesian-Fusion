@@ -21,7 +21,7 @@ if os.path.exists(manifest_path):
         distances_km = []
         
         print("\n" + "="*80)
-        print("📐 GEODESIC DISTANCE CLOSURE REPORT (WGS84 ELLIPSOID)")
+        print("  GEODESIC DISTANCE CLOSURE REPORT (WGS84 ELLIPSOID)")
         print("="*80)
         
         for idx, row in df.iterrows():
@@ -42,7 +42,7 @@ if os.path.exists(manifest_path):
         mean_dist = np.mean(distances_km)
         
         print("-"*80)
-        print(f"📊 TRAIL MATRIX FIELD METRICS:")
+        print(f"  TRAIL MATRIX FIELD METRICS:")
         print(f"  ├── Average Fragment Dispersion Distance : {mean_dist:.3f} km")
         print(f"  └── Maximum Impact Trail Radius (Extent)  : {max_dist:.3f} km")
         print("-"*80)
@@ -51,10 +51,10 @@ if os.path.exists(manifest_path):
         # A real underwater impact wreckage trail disperses across 1 to 10 kilometers.
         # If the points are thousands of kilometers away or zero, the math is broken.
         if 0.1 <= mean_dist <= 15.0:
-            print("🚨 VERIFICATION VERDICT: 🟩 MATHEMATICALLY VALID")
+            print("  VERIFICATION VERDICT:  MATHEMATICALLY VALID")
             print("   The fragment cluster conforms perfectly to a localized deep-sea wreckage cascade pattern.")
         else:
-            print("🚨 VERIFICATION VERDICT: 🟥 MATHEMATICALLY INVALID")
+            print("  VERIFICATION VERDICT:  MATHEMATICALLY INVALID")
             print("   The coordinate distribution falls outside standard aerodynamic or hydroacoustic dispersion limits.")
         print("="*80 + "\n")
         

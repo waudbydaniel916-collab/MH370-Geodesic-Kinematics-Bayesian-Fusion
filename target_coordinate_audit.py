@@ -22,24 +22,24 @@ dist_to_arc_km = dist_to_arc_m / 1000.0
 dist_to_oi_km = dist_to_oi_m / 1000.0
 
 print("\n" + "="*80)
-print("📊 MULTI-DATA TARGET VALIDATION AUDIT REPORT")
+print("  MULTI-DATA TARGET VALIDATION AUDIT REPORT")
 print("="*80)
-print(f"📍 Researched Target Coordinates Locked: {NEW_TARGET_LAT:.5f}°S, {NEW_TARGET_LON:.5f}°E")
+print(f"  Researched Target Coordinates Locked: {NEW_TARGET_LAT:.5f}°S, {NEW_TARGET_LON:.5f}°E")
 print(f"  ├── Proximity to Historic 7th Arc Anchor : {dist_to_arc_km:.2f} km")
 print(f"  └── Proximity to 2018 Survey Envelope Edge: {dist_to_oi_km:.2f} km")
 
 if dist_to_oi_km > 40.0:
     audit_status = "⚠️ VERIFIED UNSEARCHED CORRIDOR: EXCELLENT DRIFT TARGET VALIDITY"
 else:
-    audit_status = "🔍 NEAR MISS MARGIN: RE-EVALUATING SENSOR OVERLAP BLIND SPOTS"
+    audit_status = "  NEAR MISS MARGIN: RE-EVALUATING SENSOR OVERLAP BLIND SPOTS"
 
-print(f"🚨 Audit Verdict: {audit_status}")
+print(f"  Audit Verdict: {audit_status}")
 print("="*80)
 
 # =========================================================================
 # EXTERNAL DATA VALIDATION CHECKS
 # =========================================================================
-print("\n📡 EXTERNAL DATALINK CROSS-REFERENCE STATUS:")
+print("\n  EXTERNAL DATALINK CROSS-REFERENCE STATUS:")
 print(f"  ├── [EXTERNAL ADS-B] Check regional flight paths crossing Longitude {NEW_TARGET_LON:.2f}°E")
 print(f"  ├── [MARITIME AIS ] Query local ship log transponders within 50km radius cell")
 print(f"  └── [CTBTO AUDIO  ] Check Cape Leeuwin HA01 hydrophone arrival vectors")

@@ -30,7 +30,7 @@ print(f"[PHYSICS] Fixed SOFAR channel sound propagation velocity set to: {SOUND_
 # 2. WAVEFORM PROPAGATION SPEED & TIME CALCULATIONS
 # =========================================================================
 print("="*75)
-print("🔊 CRITICAL WAVEFORM ARRIVAL WINDOWS (GEOLOGICAL FILTER ACTIVE)")
+print("  CRITICAL WAVEFORM ARRIVAL WINDOWS (GEOLOGICAL FILTER ACTIVE)")
 print("="*75)
 
 for station in hydrophone_stations:
@@ -46,7 +46,7 @@ for station in hydrophone_stations:
     seconds = int(travel_time_seconds % 60)
     milliseconds = int((travel_time_seconds - int(travel_time_seconds)) * 1000)
     
-    print(f"\n📍 {station['name']}")
+    print(f"\n  {station['name']}")
     print(f"  └─ Exact Geodesic Distance : {distance_km:.2f} km")
     print(f"  └─ Calculated Travel Time   : {minutes} mins, {seconds}.{milliseconds:03d} secs")
     print(f"  └─ Targeted Signal Filter   : Fast-forward logs to baseline event + {minutes}m {seconds}s")
