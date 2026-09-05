@@ -128,7 +128,7 @@ The framework incorporates an aerodynamic descent simulation module to map poten
 * **Strategic Core Value**: Establishes a concrete bounding envelope located significantly beyond the un-piloted high-speed dive zones historically scanned by the ATSB.
 
 
-### 🛰️ 4. Advanced Infrastructure Forensic Sub-Modules
+### 🛰️ 5. Advanced Infrastructure Forensic Sub-Modules
 To provide secondary verification for the Wharton Basin gap corridor, four technical sub-engines were compiled to analyze raw, overlooked infrastructure telemetry from March 8, 2014:
 * **Ionospheric Disturbances ()**: Identifies a localized **0.47 variance spike** in NASA Total Electron Content (TEC) maps, consistent with an atmospheric acoustic-gravity wave profile.
 * **Hardware Forensic Calibration ()**: Filters out a **+4.20 Hz oscillator thermal drift error** inside the Perth Ground Earth Station to isolate a clean **177.80 Hz true Doppler lock**.
