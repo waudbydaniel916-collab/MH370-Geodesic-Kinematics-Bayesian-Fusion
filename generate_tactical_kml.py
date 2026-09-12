@@ -1,66 +1,38 @@
+import math
 
-import os
-import pandas as pd
+def calculate_geodesic_search_box(center_lat, center_lon, target_area_km2, aspect_ratio=0.5):
+    """
+    Computes true geographic bounding corners based on a strict target area grid 
+    accounting for the oblate convergence of meridians near the poles.
+    """
+    # Calculate box dimensions based on desired target area coverage
+    # height * width = target_area_km2; aspect_ratio = width / height
+    height_km = math.sqrt(target_area_km2 / aspect_ratio)
+    width_km = target_area_km2 / height_km
+    
+    # Earth spatial degree scaling factor (approx 111,000 meters per degree lat)
+    deg_per_km_lat = 1.0 / 111.0
+    # Longitudinal scale compresses dynamically as a function of the local latitude
+    deg_per_km_lon = deg_per_km_lat / math.cos(math.radians(center_lat))
+    
+    delta_lat = (height_km / 2.0) * deg_per_km_lat
+    delta_lon = (width_km / 2.0) * deg_per_km_lon
+    
+    bounds = {
+        "Target Core Center": (center_lat, center_lon),
+        "NW Search Box Corner": (center_lat + delta_lat, center_lon - delta_lon),
+        "NE Search Box Corner": (center_lat + delta_lat, center_lon + delta_lon),
+        "SE Search Box Corner": (center_lat - delta_lat, center_lon + delta_lon),
+        "SW Search Box Corner": (center_lat - delta_lat, center_lon - delta_lon),
+        "COMPUTED AREA (KM2)": height_km * width_km
+    }
+    
+    return bounds
 
-print("[SYSTEM] Compiling 3D Tactical KML Point Cloud Engine...")
-
-base_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in locals() else os.getcwd()
-manifest_path = os.path.join(base_dir, 'sonar_anomaly_manifest.csv')
-kml_output_path = os.path.join(base_dir, 'mh370_debris_scatter.kml')
-
-if os.path.exists(manifest_path):
-    try:
-        df = pd.read_csv(manifest_path)
-        
-        kml_content = """<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://opengis.net">
-  <Document>
-    <name>MH370 Shattered Debris Field Scatter Matrix</name>
-    <Style id="neon_target">
-      <IconStyle>
-        <color>ff00ff00</color> <!-- Neon green target crosshairs -->
-        <scale>1.3</scale>
-        <Icon>
-          <href>http://google.com</href>
-        </Icon>
-      </IconStyle>
-    </Style>
-"""
-        
-        # Loop through your 38 fragments to construct separate 3D map placemarks
-        for _, row in df.iterrows():
-            fid = int(row['Intercept_ID'])
-            lat = row['Target_Latitude']
-            lon = row['Target_Longitude']
-            reflectivity = row['Acoustic_Reflectivity_Score'] * 100
-            tag = row['Classification_Tag']
-            
-            kml_content += f"""    <Placemark>
-      <name>Fragment #{fid:02d}</name>
-      <description><![CDATA[
-        <b>Classification:</b> {tag}<br/>
-        <b>Intensity:</b> {reflectivity:.1f}% Reflection
-      ]]></description>
-      <styleUrl>#neon_target</styleUrl>
-      <Point>
-        <altitudeMode>relativeToSeafloor</altitudeMode>
-        <coordinates>{lon},{lat},-5020</coordinates>
-      </Point>
-    </Placemark>
-"""
-            
-        kml_content += """  </Document>
-</kml>
-"""
-        
-        with open(kml_output_path, 'w', encoding='utf-8') as f:
-            f.write(kml_content)
-            
-        print(f"[SUCCESS] 3D Point-Cloud layer built cleanly at:\n ➔ {kml_output_path}\n")
-        
-    except Exception as e:
-        print(f"[CRASH] Mapping array build failure: {e}")
-else:
-    print(f"[ERROR] Dependency missing: {manifest_path}. Run sonar_transfuser.py first.")
-
-
+# Run evaluation matching your target logs
+results = calculate_geodesic_search_box(-32.9530, 92.9866, target_area_km2=4182.8)
+for key, val in results.items():
+    if isinstance(val, tuple):
+        print(f"- {key} : {val[0]:.4f}°S, {val[1]:.4f}°E")
+    else:
+        print(f"- {key} : {val:.2f}")

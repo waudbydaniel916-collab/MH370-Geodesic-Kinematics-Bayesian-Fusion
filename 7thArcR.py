@@ -167,7 +167,7 @@ se_lat, se_lon = min(focus_lats), max(focus_lons) + 0.35
 sw_lat, sw_lon = min(focus_lats), min(focus_lons) - 0.35
 
 print("\n" + "="*65)
-print(f"🚢 SCIENTIFIC GEODESIC MARINE LOG WINDOW")
+print(f" SCIENTIFIC GEODESIC MARINE LOG WINDOW")
 print("="*65)
 print(f" Pinpointed Target Core Center : {best_row[0]:.4f}°S, {best_row[1]:.4f}°E")
 print(f" NW Search Box Corner Bound   : {nw_lat:.4f}°S, {nw_lon:.4f}°E")
