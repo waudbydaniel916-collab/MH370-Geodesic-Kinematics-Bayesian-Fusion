@@ -59,7 +59,7 @@ def compute_calibrated_travel_time(geodesic_distance_km, target_latitude):
     return minutes, seconds, effective_speed, dynamic_axis_depth
 
 if __name__ == "__main__":
-    print("🐋 Initialising SOFAR Waveguide Depth Calibrator...")
+    print("  Initialising SOFAR Waveguide Depth Calibrator...")
     
     # Test tracking run to Station HA01 (Cape Leeuwin) at your optimized latitude
     lat_target = -32.8881
@@ -68,12 +68,12 @@ if __name__ == "__main__":
     mins, secs, velocity, axis_depth = compute_calibrated_travel_time(dist_ha01, lat_target)
     
     print("\n========================================================")
-    print("🔊 DYNAMIC ACOUSTIC WAVEGUIDE RESULTS")
+    print("  DYNAMIC ACOUSTIC WAVEGUIDE RESULTS")
     print("========================================================")
-    print(f"🔹 Evaluated Target Latitude : {lat_target:.4f}°S")
-    print(f"🔹 Bended SOFAR Axis Depth   : {axis_depth:.2f} metres (Shoaled)")
-    print(f"🔹 Calibrated Sound Speed    : {velocity:.2f} m/s")
-    print(f"⏱️ HA01 Corrected Arrival     : {mins} mins, {secs:.3f} secs")
+    print(f"  Evaluated Target Latitude : {lat_target:.4f}°S")
+    print(f"  Bended SOFAR Axis Depth   : {axis_depth:.2f} metres (Shoaled)")
+    print(f"  Calibrated Sound Speed    : {velocity:.2f} m/s")
+    print(f"⏱ HA01 Corrected Arrival     : {mins} mins, {secs:.3f} secs")
     print("========================================================")
 
 
