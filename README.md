@@ -26,9 +26,10 @@ Underwater impact acoustic wave modeling discards simple vertical water column v
 
 The localized execution driver resolves the multivariate data matrix using a Monte Carlo ensemble swarm. Based on the integration of these independent physical constraints, the model yields the following optimized search parameters:
 
-* Pinpointed Target Center: -32.9293°S, 93.1491°E
+* Pinpointed Target Center: -32.8881°S, 92.9859°E
+* Dominant Debris Morphology: low_windage
 * Joint Probability Convergence: 100.00% Spatial Confidence
-* Processing Ensemble Size: 50 Active Monte Carlo Particles
+* Processing Ensemble Size: 90 Active Monte Carlo Particles (Multi-Class Array)
 * Output Matrix Payload: final_optimized_search_corridor.csv
 
 ## Repository File Structure
