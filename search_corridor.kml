@@ -1,19 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://google.com">
-<Document>
-  <name>MH370 Prioritized Search Corridor</name>
-  <Placemark>
-    <name>Kinetic Glide Target Path</name>
-    <LineString>
-      <tessellate>1</tessellate>
-      <coordinates>
-        92.41644295302014,-32.52348993288591,0
-        93.55671140939597,-32.52348993288591,0
-        93.55671140939597,-33.38255033557047,0
-        92.41644295302014,-33.38255033557047,0
-        92.41644295302014,-32.52348993288591,0
-      </coordinates>
-    </LineString>
-  </Placemark>
-</Document>
+<kml xmlns="http://opengis.net">
+  <Document>
+    <name>MH370 Calibrated Tactical Search Corridor</name>
+    <description>Generated via Curtin University Multi-Class Bayesian Fusion Pipeline</description>
+    
+    <!-- Target Center Pin Point -->
+    <Placemark>
+      <name>PINPOINTED TARGET CENTER</name>
+      <description>Calculated Seafloor Depth: 4311.58 meters</description>
+      <Point>
+        <coordinates>92.9632,-32.8404,-4311.58</coordinates>
+      </Point>
+    </Placemark>
+    
+    <!-- Bounding Search Perimeter Box -->
+    <Placemark>
+      <name>TACTICAL SEARCH BOUNDARY POLYGON</name>
+      <Style>
+        <LineStyle>
+          <color>ff0000ff</color> <!-- Red Boundary Line -->
+          <width>3</width>
+        </LineStyle>
+        <PolyStyle>
+          <color>400000ff</color> <!-- Translucent Red Fill Inside -->
+        </PolyStyle>
+      </Style>
+      <Polygon>
+        <tessellate>1</tessellate>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              92.9182,-32.7954,0
+              93.0082,-32.7954,0
+              93.0082,-32.885400000000004,0
+              92.9182,-32.885400000000004,0
+              92.9182,-32.7954,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
 </kml>
