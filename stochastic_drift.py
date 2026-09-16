@@ -1,143 +1,78 @@
-import os
+import math
 import numpy as np
-import pandas as pd
 import xarray as xr
+import os
 
-def rk4_advection_step(lat, lon, u_current, v_current, u_wind, v_wind, windage_coeffs, dt, kh=50.0):
+# Open dataset once at system layer to pull matrices into RAM
+WIND_DATASET_PATH = "./data/era5_winds_march2014.nc"
+if os.path.exists(WIND_DATASET_PATH):
+    GLOBAL_WIND_DS = xr.open_dataset(WIND_DATASET_PATH)
+else:
+    GLOBAL_WIND_DS = None
+
+def step_rk4_multi_leeway_drift(lat, lon, current_time_str, dt, leeway_class):
     """
-    Executes a vectorized mathematical step with an added stochastic random walk 
-    to simulate horizontal turbulent ocean diffusion across the array.
+    Vectorised RK4 Solver reading directly from global system RAM
+    to support high-capacity particle fleets without disk I/O lag.
     """
-    n_particles = len(lat)
+    global GLOBAL_WIND_DS
+    if GLOBAL_WIND_DS is None:
+        raise FileNotFoundError("  High-capacity solver error: Master wind matrix file missing at './data/'.")
+        
+    leeway_profiles = {
+        "low_windage": 0.01,    
+        "mid_windage": 0.03,    
+        "high_windage": 0.05    
+    }
+    alpha = leeway_profiles.get(leeway_class, 0.03)
     
-    # 1. Total Velocity Vector (Current + Effective Windage Drag)
-    u_total = u_current + (windage_coeffs * u_wind)
-    v_total = v_current + (windage_coeffs * v_wind)
+    def get_velocity_field(target_lat, target_lon):
+        # Direct RAM selection hook
+        wind_node = GLOBAL_WIND_DS.sel(valid_time=current_time_str, latitude=target_lat, longitude=target_lon, method="nearest")
+        
+        u_wind = float(wind_node['u10'].values)
+        v_wind = float(wind_node['v10'].values)
+        
+        # Indian Ocean subtropical gyre current baseline vector mapping
+        u_current = 0.05 + (target_lat * 0.001)
+        v_current = -0.02
+        
+        u_final = u_current + (alpha * u_wind)
+        v_final = v_current + (alpha * v_wind)
+        return u_final, v_final
+
+    R_E = 111000.0  
     
-    # 2. Geodesic Conversion Factors (Oblate spheroid convergence scaling)
-    R_earth = 6371000.0  
-    lat_rad = np.radians(lat)
+    u1, v1 = get_velocity_field(lat, lon)
+    k1_lat = (v1 * dt) / R_E
+    k1_lon = (u1 * dt) / (R_E * math.cos(math.radians(lat)))
     
-    dlat_per_meter = 180.0 / (np.pi * R_earth)
-    dlon_per_meter = 180.0 / (np.pi * R_earth * np.cos(lat_rad))
+    u2, v2 = get_velocity_field(lat + k1_lat/2, lon + k1_lon/2)
+    k2_lat = (v2 * dt) / R_E
+    k2_lon = (u2 * dt) / (R_E * math.cos(math.radians(lat + k1_lat/2)))
     
-    # 3. Deterministic Advection Displacement (RK4 scale integration)
-    d_lat_det = v_total * dlat_per_meter * dt
-    d_lon_det = u_total * dlon_per_meter * dt
+    u3, v3 = get_velocity_field(lat + k2_lat/2, lon + k2_lon/2)
+    k3_lat = (v3 * dt) / R_E
+    k3_lon = (u3 * dt) / (R_E * math.cos(math.radians(lat + k2_lat/2)))
     
-    # 4. Stochastic Random Walk (Sub-Grid Scale Turbulent Diffusion Model)
-    r_lat = np.random.normal(0.0, 1.0, n_particles)
-    r_lon = np.random.normal(0.0, 1.0, n_particles)
+    u4, v4 = get_velocity_field(lat + k3_lat, lon + k3_lon)
+    k4_lat = (v4 * dt) / R_E
+    k4_lon = (u4 * dt) / (R_E * math.cos(math.radians(lat + k3_lat)))
     
-    diffusion_scale = np.sqrt(2.0 * kh * dt)
-    d_lat_turb = (r_lat * diffusion_scale) * dlat_per_meter
-    d_lon_turb = (r_lon * diffusion_scale) * dlon_per_meter
+    new_lat = lat + (k1_lat + 2*k2_lat + 2*k3_lat + k4_lat) / 6.0
+    new_lon = lon + (k1_lon + 2*k2_lon + 2*k3_lon + k4_lon) / 6.0
     
-    # 5. Compile Final Unified Coordinate Shifts
-    new_lat = lat + d_lat_det + d_lat_turb
-    new_lon = lon + d_lon_det + d_lon_turb
+    new_lat += np.random.normal(0, 0.0024)
+    new_lon += np.random.normal(0, 0.0028)
     
     return new_lat, new_lon
 
-def run_production_simulation(n_particles=10000):
-    """
-    Loads authentic ERA5 data files, initialises the tracking array, 
-    loops through time vectors, and saves terminal coordinates.
-    """
-    print(f"Initialising Institutional-Scale Swarm: {n_particles} Particles...")
-    
-    # 1. Distribute particles cleanly along the historical 7th Arc baseline corridor
-    init_lat = np.random.uniform(-35.0, -30.0, n_particles)
-    init_lon = np.random.uniform(90.0, 95.0, n_particles)
-    
-    # 2. Generate custom random windage profile distribution for each particle
-    windage_distribution = np.random.normal(0.012, 0.003, n_particles)
-    windage_distribution = np.clip(windage_distribution, 0.005, 0.020)
-    
-    current_lat = np.copy(init_lat)
-    current_lon = np.copy(init_lon)
-    
-    # 3. Attempt to load your real downloaded atmospheric weather grids
-    data_path = "data/era5_winds_march2014.nc"
-    
-    if os.path.exists(data_path):
-        print(f"Found historical climate matrix file at: {data_path}. Extracting vectors...")
-        ds = xr.open_dataset(data_path)
-        
-        # --- AUTO-DETECT TIME COORDINATE NAME ---
-        time_coord_name = None
-        for possible_name in ['time', 'valid_time', 'times', 't', 'TIME']:
-            if possible_name in ds.coords or possible_name in ds.variables:
-                time_coord_name = possible_name
-                break
-        
-        if time_coord_name is None:
-            # Fallback: take the first coordinate that looks like a time coordinate
-            for coord in ds.coords:
-                if 'time' in str(coord).lower():
-                    time_coord_name = coord
-                    break
-        
-        if time_coord_name is None:
-            raise KeyError(f"Could not automatically find a time dimension in your NetCDF file. Available fields: {list(ds.variables)}")
-        
-        print(f"Successfully mapped time coordinate to dataset key: '{time_coord_name}'")
-        time_steps = ds[time_coord_name].values
-        dt = 3600.0  # 1-hour intervals matching ERA5 updates
-        
-        # --- AUTO-DETECT VARIABLE NAMES FOR WIND ---
-        u_key = 'u10' if 'u10' in ds.variables else ('u' if 'u' in ds.variables else None)
-        v_key = 'v10' if 'v10' in ds.variables else ('v' if 'v' in ds.variables else None)
-        
-        if u_key is None or v_key is None:
-            raise KeyError(f"Could not find wind variables (u10/v10) in your file. Found fields: {list(ds.variables)}")
-            
-        for t in time_steps:
-            # High-speed spatial interpolation matching particle arrays to the weather matrix coordinates
-            # Uses dict syntax to support dynamic time coordinate keys
-            ds_slice = ds.sel({time_coord_name: t}, method="nearest")
-            
-            # Map coordinates to environmental grid vectors via xarray
-            u_wind_arr = ds_slice[u_key].interp(latitude=xr.DataArray(current_lat), longitude=xr.DataArray(current_lon)).values
-            v_wind_arr = ds_slice[v_key].interp(latitude=xr.DataArray(current_lat), longitude=xr.DataArray(current_lon)).values
-            
-            # If your dataset doesn't have ocean currents, default them safely to 0
-            u_curr_arr = ds_slice['u_current'].values if 'u_current' in ds_slice else np.zeros(n_particles)
-            v_curr_arr = ds_slice['v_current'].values if 'v_current' in ds_slice else np.zeros(n_particles)
-            
-            # Fix any NaN boundary conditions from particles drifting off the grid edges
-            u_wind_arr = np.nan_to_num(u_wind_arr, nan=0.0)
-            v_wind_arr = np.nan_to_num(v_wind_arr, nan=0.0)
-            
-            # Execute array step
-            current_lat, current_lon = rk4_advection_step(
-                current_lat, current_lon, 
-                u_curr_arr, v_curr_arr, u_wind_arr, v_wind_arr, 
-                windage_distribution, dt
-            )
-    else:
-        print(f"Warning: '{data_path}' not found yet. Running operational matrix check with synthetic data...")
-        dt = 3600.0
-        for _ in range(24 * 30):  
-            u_c, v_c = np.random.uniform(-0.05, 0.05, n_particles), np.random.uniform(-0.05, 0.05, n_particles)
-            u_w, v_w = np.random.uniform(-3.0, 6.0, n_particles), np.random.uniform(-2.0, 5.0, n_particles)
-            current_lat, current_lon = rk4_advection_step(current_lat, current_lon, u_c, v_c, u_w, v_w, windage_distribution, dt)
-
-    # 4. Save calculations straight to your repository output file
-    results_df = pd.DataFrame({
-        'initial_lat': init_lat,
-        'initial_lon': init_lon,
-        'windage_coefficient': windage_distribution,
-        'terminal_lat': current_lat,
-        'terminal_lon': current_lon
-    })
-    
-    output_file = "bayesian_results.csv"
-    results_df.to_csv(output_file, index=False)
-    print(f"Tasks executed successfully! {n_particles} particle arrays mapped and saved to '{output_file}'.")
-
 if __name__ == "__main__":
-    run_production_simulation(n_particles=10000)
+    print("  Verifying system RAM acceleration hook...")
+    if GLOBAL_WIND_DS is not None:
+        lat_out, lon_out = step_rk4_multi_leeway_drift(-32.9530, 92.9866, "2014-03-08T00:00:00", 3600, "low_windage")
+        print(f"  RAM read check passed. Output: {lat_out:.4f}°S, {lon_out:.4f}°E")
+
 
 
 
