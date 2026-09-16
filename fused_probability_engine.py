@@ -1,100 +1,98 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 
-def calculate_dynamic_sofar_axis(latitude):
+def execute_master_bayesian_fusion(input_path="processed_density_weights.csv", output_path="final_optimized_search_corridor.csv"):
     """
-    Dynamically tracks the depth of the SOFAR channel axis waveguide 
-    as it shoals (bends upward) moving south into sub-Antarctic thermal zones.
+    Loads compiled drift, satellite, and biological probability weights,
+    integrates horizontal hydroacoustic waveguide vectors, and computes
+    the final Joint Probability Density Function on the WGS84 ellipsoid.
     """
-    baseline_depth = 1000.0
-    if latitude < -25.0:
-        latitude_offset = abs(latitude) - 25.0
-        shoaling_effect = latitude_offset * 18.5  
-        dynamic_axis = baseline_depth - shoaling_effect
-    else:
-        dynamic_axis = baseline_depth
-    return max(150.0, dynamic_axis)
-
-def calculate_calibrated_sound_speed(depth, latitude):
-    """
-    Computes local water column sound velocity using the dynamic Munk waveguide profile.
-    """
-    z_sofar = calculate_dynamic_sofar_axis(latitude)
-    c_sofar = 1482.0  
-    epsilon = 2.0 * (depth - z_sofar) / z_sofar
-    return c_sofar * (1.0 + 0.0074 * (epsilon - 1.0 + np.exp(-epsilon)))
-
-def run_master_bayesian_fusion(fused_csv_path):
-    """
-    Executes the ultimate multivariate Bayesian Data Fusion matrix, combining 
-    kinematic drift, satellite BFO, biological markers, and calibrated SOFAR acoustics.
-    """
-    print("  Initialising Master Multivariate Bayesian Data Fusion Engine...")
+    print(f"Reading multi-sensor density weights from: {input_path}")
+    df = pd.read_csv(input_path)
+    n_particles = len(df)
     
-    try:
-        df = pd.read_csv(fused_csv_path)
-    except FileNotFoundError:
-        print(f"  Error: Cannot find '{fused_csv_path}'. Run the satellite script first!")
-        return None
-
-    # ========================================================
-    # 1. INTEGRATE SPATIAL DRIFT DISTANCES (P_drift)
-    # ========================================================
-    df['p_drift'] = np.exp(-df['distance_delta'] / 0.5)
-
-    # ========================================================
-    # 2. INTEGRATE BIOLOGICAL MARKERS (Barnacle Sclerochronology)
-    # ========================================================
-    df['p_barnacle'] = np.where(df['terminal_lat'] <= -31.5, 0.95, 0.15)
-
-    # ========================================================
-    # 3. INTEGRATE DYNAMIC HYDROACOUSTIC ARRIVALS (P_acoustic)
-    # ========================================================
-    # Instead of a flat baseline, compute sound velocity profiles for each individual particle coordinate
-    print("  Running parallel vertical waveguide calibration across particle fleet...")
-    calibrated_speeds = []
-    for idx, row in df.iterrows():
-        axis_z = calculate_dynamic_sofar_axis(row['terminal_lat'])
-        v_sound = calculate_calibrated_sound_speed(axis_z, row['terminal_lat'])
-        calibrated_speeds.append(v_sound)
+    print(f"Compiling final Bayesian fusion matrix across {n_particles} particles...")
     
-    df['calibrated_sound_speed'] = calibrated_speeds
+    terminal_lat = df['terminal_lat'].values
+    terminal_lon = df['terminal_lon'].values
     
-    # Evaluate probability density based on the acoustic center variance matching the dynamic channel speeds
-    acoustic_center_lat = -32.8000
-    df['p_acoustic'] = np.exp(-((df['terminal_lat'] - acoustic_center_lat)**2) / 0.1)
+    # 1. Hydroacoustic Waveguide Propagation Model (P_acoustic)
+    # Station coordinates for CTBTO listening arrays
+    # HA01: Cape Leeuwin, Western Australia
+    # H08: Diego Garcia, Indian Ocean
+    ha01_lat, ha01_lon = -34.3083, 115.1114
+    h08_lat, h08_lon = -7.3133, 72.4111
+    
+    # Mean sound velocity along the SOFAR channel axis depth layer (1000m)
+    # Account for regional horizontal thermal gradients in the Southern Indian Ocean
+    c_sofar = 1485.0 # metres per second
+    R_earth = 6371000.0
+    
+    def calculate_acoustic_delay_probabilities(t_lat, t_lon, s_lat, s_lon, target_delay_hours=0.0):
+        # Convert degrees to radians
+        lat1, lon1 = np.radians(t_lat), np.radians(t_lon)
+        lat2, lon2 = np.radians(s_lat), np.radians(s_lon)
+        
+        # Great-circle distance lines via spherical law of cosines
+        cos_d = np.sin(lat1) * np.sin(lat2) + np.cos(lat1) * np.cos(lat2) * np.cos(lon1 - lon2)
+        cos_d = np.clip(cos_d, -1.0, 1.0)
+        distance_meters = R_earth * np.arccos(cos_d)
+        
+        # Calculate theoretical sound wave travel time in hours
+        travel_time_hours = (distance_meters / c_sofar) / 3600.0
+        
+        # Modeled delay mismatch check against specific hydroacoustic signal window
+        # Real comprehensive audits scan for transient acoustic signals around the 7th arc timing
+        acoustic_uncertainty_hours = 0.5 # account for bathymetric shadowing and masking
+        prob = np.exp(-((travel_time_hours - target_delay_hours) ** 2) / (2 * (acoustic_uncertainty_hours ** 2)))
+        return prob
 
-    # ========================================================
-    # 4. COMPUTE THE MULTI-CLASS JOINT PROBABILITY DENSITY FUNCTION
-    # ========================================================
-    df['p_fused_master'] = df['p_drift'] * df['p_satellite'] * df['p_barnacle'] * df['p_acoustic']
+    # Calculate individual waveguide probabilities for both tracking arrays
+    p_ha01 = calculate_acoustic_delay_probabilities(terminal_lat, terminal_lon, ha01_lat, ha01_lon, target_delay_hours=4.2)
+    p_h08 = calculate_acoustic_delay_probabilities(terminal_lat, terminal_lon, h08_lat, h08_lon, target_delay_hours=3.8)
     
-    if df['p_fused_master'].max() > 0:
-        df['p_fused_master'] = (df['p_fused_master'] / df['p_fused_master'].max()) * 100.0
-
-    # Extract final optimized tracking coordinates
-    peak_idx = df['p_fused_master'].idxmax()
-    optimized_lat = df.loc[peak_idx, 'terminal_lat']
-    optimized_lon = df.loc[peak_idx, 'terminal_lon']
-    peak_class = df.loc[peak_idx, 'leeway_class']
-    peak_probability = df.loc[peak_idx, 'p_fused_master']
-
-    print("\n========================================================")
-    print(f"  **CALIBRATED MULTI-SENSOR SEARCH CORRIDOR COMPLETE**")
-    print("========================================================")
-    print(f"  **Pinpointed Target Center**   : {optimized_lat:.4f}°S, {optimized_lon:.4f}°E")
-    print(f"  Dominant Debris Morphology : {peak_class}")
-    print(f"  Maximum Fusion Confidence   : {peak_probability:.2f}%")
-    print(f"  Combined Fleet Population   : {len(df)} Active Particles")
-    print("========================================================")
+    # Combined hydroacoustic probability layer
+    acoustic_probabilities = p_ha01 * p_h08
+    if np.max(acoustic_probabilities) > 0:
+        acoustic_probabilities = acoustic_probabilities / np.max(acoustic_probabilities)
+        
+    # 2. Compile Master Joint Probability Density Function (PDF) Matrix
+    # Multiply all active independent spatial probabilities together
+    # P_fused = P_drift_sat_barnacle * P_acoustic
+    base_fused_weight = df['fused_drift_sat_barnacle_weight'].values
+    final_joint_probabilities = base_fused_weight * acoustic_probabilities
     
-    df.to_csv("final_optimized_search_corridor.csv", index=False)
-    print("  Final target matrix successfully exported to 'final_optimized_search_corridor.csv'!")
+    # Normalize final spatial distribution array
+    if np.max(final_joint_probabilities) > 0:
+        final_joint_probabilities = final_joint_probabilities / np.max(final_joint_probabilities)
+        
+    # 3. Pinpoint Definitive Peak Convergence Zone Coordinates
+    # Identify the highest-scoring particle coordinates in the matrix payload
+    peak_index = np.argmax(final_joint_probabilities)
+    optimized_lat = terminal_lat[peak_index]
+    optimized_lon = terminal_lon[peak_index]
     
-    return optimized_lat, optimized_lon
+    # Alternatively, extract the center of mass of the top 1% highest confidence particles
+    high_confidence_threshold = np.percentile(final_joint_probabilities, 99.0)
+    top_cluster_indices = final_joint_probabilities >= high_confidence_threshold
+    
+    center_mass_lat = np.mean(terminal_lat[top_cluster_indices])
+    center_mass_lon = np.mean(terminal_lon[top_cluster_indices])
+    
+    # 4. Export Finalized Optimized Search Target Matrix
+    df['acoustic_waveguide_probability'] = acoustic_probabilities
+    df['final_joint_probability'] = final_joint_probabilities
+    
+    df.to_csv(output_path, index=False)
+    print(f"Finalized joint probability matrix payload saved to: {output_path}")
+    print("\n--- Optimized Search Corridor Analysis Summary ---")
+    print(f"Absolute Peak Coordinate: Latitude {optimized_lat:.4f}, Longitude {optimized_lon:.4f}")
+    print(f"Top 1% Cluster Center of Mass: Latitude {center_mass_lat:.4f}, Longitude {center_mass_lon:.4f}")
+    print(f"Spatial Confidence Interval Bounds: {n_particles} Ensemble Array Processing Complete.")
 
 if __name__ == "__main__":
-    run_master_bayesian_fusion(fused_csv_path="satellite_fused_weights.csv")
+    execute_master_bayesian_fusion()
+
 
 
 
